@@ -17,20 +17,23 @@
 %   @param X      : `m` by `n` matrix of the Training Set Features;
 %                   each row represents a sample with `n` features.
 %   @param y      : `m` column vector of the Training Set Samples.
-%   @param lambda : 
+%   @param lambda : regularization parameter.
 %
-%   @return J     : Cost function for the choosen `theta`
 %   @return J_grad: `n+1` column vector of the gradient value of `J`
 
-function [ J, J_grad ] = neural_cost( Theta, s, X, y, lambda)
+function [ J, grad ] = neural_cost( Theta, s, X, y, lambda )
 %% Parameters Initialization
     [~, L] = size(s);
     [m, ~] = size(X);
+    
     a = cell(L, 1);
-    Theta_biasless = cell(L-1, 1);
     delta = cell(L, 1);
+    grad = cell(L, 1);
+    
     Y = zeros(m, size(Theta{L-1}, 2));
     Y(sub2ind(size(Y), 1:5000,y')) = 1;
+    
+    Theta_biasless = cell(L-1, 1);
     for l = 1 : L-1
         Theta_biasless{l} = Theta{l}(2:end, :);
     end
@@ -55,16 +58,28 @@ function [ J, J_grad ] = neural_cost( Theta, s, X, y, lambda)
     % Last Layer Evaluation (no bias)
     a{L} = sigmf(a{L-1} * Theta{L-1}, [1 0]);
 
+%% Cost Evaluation on L
+    J = sum(sum(Y .* log(a{L}) + (1-Y) .* log(1-a{L})));
+    reg = 0;
+    if lambda ~= 0
+        for l = 1 : L-1
+            reg = reg + sum(sum(Theta_biasless{l}.^2));
+        end
+    end
+    J = (lambda/2 * reg - J) / m;
 %% Error Evaluation on L
     delta{L} = a{L} - Y;
+    
 %% Error Backward Propagation
-    for l = L-1 : -1 : 1
+    for l = L-1 : -1 : 2
         delta{l} = a{l}(:, 2:end) .* (1 - a{l}(:, 2:end)) .* (delta{l+1} * Theta_biasless{l}');
     end
+    
 %% Gradient Evaluation
-
+    for l = 2 : L
+        grad{l-1} = a{l-1}(:, 2:end)' * delta{l};
+    end
+    
 %% Output
-J = 0;
-J_grad = 0;
 
 end
