@@ -18,9 +18,9 @@
 function [U, S] = PCA(X)
     [m, n] = size(X);
     
-
-    % ...
-    % ...
-    % ...
+    Sigma = X' / m * X;
+    [U, ~, ~] = svd(Sigma);
+    U = U(:, 1:n);
+    S = X * U;
 end
 

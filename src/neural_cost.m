@@ -84,19 +84,10 @@ function [ J, grad ] = neural_cost( Theta, s, X, y, lambda )
     end
     
 %% Gradient Evaluation
-%     for l = 2 : L
-%         %grad{l-1} = a{l-1}' * delta{l};
-%         grad{l-1} = a{l-1}(:, 2:end)' * delta{l};
-%     end
-    Theta1_grad = zeros(size(Theta_biasless{1}));
-    Theta2_grad = zeros(size(Theta_biasless{2}));
-    for i = 1 : m
-        Theta1_grad = Theta1_grad + (delta{2}(i, :)' * a{1}(i, 2:end))';
-        Theta2_grad = Theta2_grad + (delta{3}(i, :)' * a{2}(i, 2:end))';
-    end
-    T1 = Theta1_grad'/m;
-    T2 = Theta1_grad'/m;
-    grad = [T1(:); T2(:)];
+     for l = 2 : L
+         grad{l-1} = a{l-1}' * delta{l}/m;
+         %grad{l-1} = a{l-1}(:, 2:end)' * delta{l};
+     end
 %% Output
 
 end
