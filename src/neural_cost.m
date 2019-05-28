@@ -8,8 +8,8 @@
 %    - Cost Evaluation over the last Layer
 %       ```math
 %       \begin{split}
-%           J = \sum_i^m\sum_j^{s_L} Y_{i,j} \log(a^{(L)}_{i,j})
-%               + (1-Y_{i,j}) \log(1-a^{(L)}_{i,j})                   \\
+%           J = \sum_i^m\sum_j^{s_L} Y_{i,j} \cdot \log(a^{(L)}_{i,j})
+%               + (1-Y_{i,j}) \cdot \log(1-a^{(L)}_{i,j})             \\
 %           reg = \sum_l^{L-1} \sum_i^{s_l} \sum_j^{s_l+1}
 %               {\Theta^{(l)}_{i,j}}^2                                \\
 %           J = (\lambda/2 reg - J) / m
@@ -20,7 +20,17 @@
 %           \delta^{(L)} = a^{(L)} - Y
 %       ```
 %    - error backward propagation of the error
+%       ```math
+%           \delta^{(l)} = a^{(l)}_{\mbox{biasless}} \cdot
+%               (1 - a^{(l)}_{\mbox{biasless}} \cdot
+%               (\delta^{(l+1)} * \Theta^{(l)}_{\mbox{biasless}}')
+%               \quad \forall l \in [L-1, 2]
+%       ```
 %    - evaluation of the gradient
+%       ```math
+%           \nabla^{(l)} = \frac1m a{(l)}' * \delta{(l+1)}
+%               \quad \forall l \in [1, L-1]
+%       ```
 %
 %   @param Theta  : `L-1` Cell-row-vector of the weight matrices between
 %                   each couple of layers. `Theta{l}(i j)` is the weight
@@ -32,17 +42,19 @@
 %   @param y      : `m` column vector of the Training Set Samples.
 %   @param lambda : regularization parameter.
 %
-%   @return J_grad: `n+1` column vector of the gradient value of `J`
+%   @return J     : Cost associated to the input weigths.
+%   @return nabla : `L-1` Cell-row-vector of the gradient value of `J`.
+%                   `grad{l}(i, j)` is the derivative of `J` with respect
+%                   to `Theta{l}(i j)`.
 
-function [ J, grad ] = neural_cost( Theta, s, X, y, lambda )
-%% Parameters Initialization
-    changing_bias = 0;
+function [ J, nabla ] = neural_cost( Theta, s, X, y, lambda )
+%% Parameters Initialization && Correctness Check
     [~, L] = size(s);
     [m, ~] = size(X);
     
     a = cell(L, 1);
     delta = cell(L, 1);
-    grad = cell(L, 1);
+    nabla = cell(L, 1);
     
     Y = zeros(m, s(L));
     Y(sub2ind([m s(L)], 1:m,y')) = 1;
@@ -51,15 +63,16 @@ function [ J, grad ] = neural_cost( Theta, s, X, y, lambda )
     for l = 1 : L-1
         Theta_biasless{l} = Theta{l}(2:end, :);
     end
-
+    
 %% Input criteria check
-    assert(size(s, 1) == 1);
-    assert(length(Theta) == L-1);
-    for i = 1 : L-1
-        assert(isequal(size(Theta{i}), [s(i)+1 s(i+1)]))
-    end
-    assert(size(X, 2) == s(1));
-    assert(isequal(size(y), [m, 1]));
+%     assert(size(s, 1) == 1);
+%     assert(length(Theta) == L-1);
+%     for i = 1 : L-1
+%         assert(isequal(size(Theta{i}), [s(i)+1 s(i+1)]))
+%     end
+%     assert(size(X, 2) == s(1));
+%     assert(isequal(size(y), [m, 1]));
+% Input check criteria skipped due to time optimisation
 
 %% Forward Propagation
     a{1} = [ones(m, 1) X];  % First Layer Initialization (+ bias)
@@ -81,26 +94,21 @@ function [ J, grad ] = neural_cost( Theta, s, X, y, lambda )
         end
     end
     J = (lambda/2 * reg - J) / m;
+    
 %% Error Evaluation on L
     delta{L} = a{L} - Y;
     
 %% Error Backward Propagation
-    if changing_bias == 1
-        delta{L-1} = a{L-1} .* (1 - a{L-1}) .* (delta{L} * Theta{L-1}');
-        for l = L-2 : -1 : 2
-            delta{l} = a{l} .* (1 - a{l}) .* (delta{l+1}(:, 2:end) * Theta{l}');
-        end
-    else
-        for l = L-1 : -1 : 2
-            delta{l} = a{l}(:, 2:end) .* (1 - a{l}(:, 2:end)) .* (delta{l+1} * Theta_biasless{l}');
-        end
+    for l = L-1 : -1 : 2
+        delta{l} = a{l}(:, 2:end) .* (1 - a{l}(:, 2:end)) .* ...
+            (delta{l+1} * Theta_biasless{l}');
     end
     
 %% Gradient Evaluation
-     for l = 2 : L
-         grad{l-1} = a{l-1}' * delta{l}/m;
-         %grad{l-1} = a{l-1}(:, 2:end)' * delta{l};
-     end
+    for l = 2 : L
+        nabla{l-1} = a{l-1}' * delta{l}/m;
+    end
+
 %% Output
 
 end
