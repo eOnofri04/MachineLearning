@@ -1,11 +1,24 @@
 %NEURAL_COST Compute neural network cost function and associated gradient.
-%   Evaluate the cost function by applying:
+%   Evaluate the cost function and its gradient by applying:
 %    - forward propagation of the training set for each training sample
 %       ```math
-%           a^{(l+1)} = g(\Theta^{(l)} * a^{(l)}),
-%           \qquad \forall l \in[1,L]
+%           a^{(l+1)} = g(\Theta^{(l)} \times a^{(l)}),
+%           \qquad \forall l \in[1,L-1]
+%       ```
+%    - Cost Evaluation over the last Layer
+%       ```math
+%       \begin{split}
+%           J = \sum_i^m\sum_j^{s_L} Y_{i,j} \log(a^{(L)}_{i,j})
+%               + (1-Y_{i,j}) \log(1-a^{(L)}_{i,j})                   \\
+%           reg = \sum_l^{L-1} \sum_i^{s_l} \sum_j^{s_l+1}
+%               {\Theta^{(l)}_{i,j}}^2                                \\
+%           J = (\lambda/2 reg - J) / m
+%       \end{split} 
 %       ```
 %    - error evaluation of the last layer
+%       ```math
+%           \delta^{(L)} = a^{(L)} - Y
+%       ```
 %    - error backward propagation of the error
 %    - evaluation of the gradient
 %
